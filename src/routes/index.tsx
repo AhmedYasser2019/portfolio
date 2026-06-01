@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Github, ExternalLink, Mail, Star, GitFork, Code2, Server, Database, Wrench } from "lucide-react";
+import { Github, Mail, Code2, Server, Database, Wrench, Activity } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -17,20 +17,14 @@ export const Route = createFileRoute("/")({
 const GITHUB_USER = "AhmedYasser2019";
 
 type GhUser = { public_repos: number; followers: number; following: number; avatar_url: string; bio: string; name: string; html_url: string; created_at: string };
-type GhRepo = { id: number; name: string; description: string | null; html_url: string; language: string | null; stargazers_count: number; forks_count: number; updated_at: string; fork: boolean };
 
 function Index() {
   const { data: user } = useQuery<GhUser>({
     queryKey: ["gh-user"],
     queryFn: () => fetch(`https://api.github.com/users/${GITHUB_USER}`).then((r) => r.json()),
   });
-  const { data: repos } = useQuery<GhRepo[]>({
-    queryKey: ["gh-repos"],
-    queryFn: () => fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=updated`).then((r) => r.json()),
-  });
-
-  const visibleRepos = (repos ?? []).filter((r) => !r.fork);
   const yearsCoding = user ? new Date().getFullYear() - new Date(user.created_at).getFullYear() : 7;
+  const contributionsLastYear = 5285;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -104,7 +98,7 @@ function Index() {
 
           {/* Stats */}
           <div className="mt-16 grid grid-cols-2 gap-4 md:grid-cols-4">
-            <StatCard label="Public Repos" value={user?.public_repos ?? "—"} highlight />
+            <StatCard label="Contributions (last year)" value={contributionsLastYear.toLocaleString()} highlight />
             <StatCard label="Followers" value={user?.followers ?? "—"} />
             <StatCard label="Following" value={user?.following ?? "—"} />
             <StatCard label="Years on GitHub" value={yearsCoding} />
@@ -140,56 +134,38 @@ function Index() {
 
       {/* Projects */}
       <section id="projects" className="mx-auto max-w-6xl px-6 py-24">
-        <div className="flex items-end justify-between gap-6">
-          <SectionTitle
-            eyebrow="Projects"
-            title={`${user?.public_repos ?? visibleRepos.length} repositories on GitHub`}
-          />
-          <a
-            href={`https://github.com/${GITHUB_USER}?tab=repositories`}
-            target="_blank"
-            rel="noreferrer"
-            className="hidden text-sm text-muted-foreground hover:text-primary md:inline-flex items-center gap-1"
-          >
-            View all <ExternalLink className="size-3.5" />
-          </a>
-        </div>
-
-        <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {!repos &&
-            Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-48 animate-pulse rounded-xl border border-border bg-card/50" />
-            ))}
-          {visibleRepos.map((repo) => (
-            <a
-              key={repo.id}
-              href={repo.html_url}
-              target="_blank"
-              rel="noreferrer"
-              className="group relative flex flex-col rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-card)] transition-all hover:-translate-y-1 hover:border-primary"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <Github className="size-4 text-muted-foreground" />
-                  <h3 className="font-semibold group-hover:text-primary transition-colors">{repo.name}</h3>
-                </div>
-                <ExternalLink className="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+        <SectionTitle eyebrow="Activity" title="Consistently shipping code" center />
+        <div className="mt-12 grid gap-6 md:grid-cols-[1.2fr_1fr]">
+          <div className="relative overflow-hidden rounded-2xl border border-primary/40 bg-card p-10 shadow-[var(--shadow-glow)]">
+            <div className="absolute inset-0 bg-[image:var(--gradient-surface)] opacity-60" />
+            <div className="relative">
+              <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background/40 px-3 py-1 text-xs text-muted-foreground">
+                <Activity className="size-3.5 text-primary" />
+                Last 12 months
               </div>
-              <p className="mt-3 line-clamp-3 flex-1 text-sm text-muted-foreground">
-                {repo.description ?? "No description provided."}
+              <div className="mt-6 text-6xl font-bold tracking-tight md:text-7xl">
+                <span className="bg-[image:var(--gradient-hero)] bg-clip-text text-transparent">
+                  {contributionsLastYear.toLocaleString()}
+                </span>
+              </div>
+              <p className="mt-3 text-lg text-muted-foreground">
+                contributions on GitHub in the last year
               </p>
-              <div className="mt-5 flex items-center gap-4 text-xs text-muted-foreground">
-                {repo.language && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="size-2 rounded-full bg-primary" />
-                    {repo.language}
-                  </span>
-                )}
-                <span className="inline-flex items-center gap-1"><Star className="size-3.5" /> {repo.stargazers_count}</span>
-                <span className="inline-flex items-center gap-1"><GitFork className="size-3.5" /> {repo.forks_count}</span>
-              </div>
-            </a>
-          ))}
+              <a
+                href={`https://github.com/${GITHUB_USER}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-8 inline-flex items-center gap-2 rounded-full bg-[image:var(--gradient-hero)] px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
+              >
+                <Github className="size-4" /> View on GitHub
+              </a>
+            </div>
+          </div>
+          <div className="grid gap-4">
+            <StatCard label="Avg / day" value={Math.round(contributionsLastYear / 365)} />
+            <StatCard label="Avg / week" value={Math.round(contributionsLastYear / 52)} />
+            <StatCard label="Avg / month" value={Math.round(contributionsLastYear / 12)} />
+          </div>
         </div>
       </section>
 
